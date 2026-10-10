@@ -15,16 +15,28 @@ jobs:
       postgres:
         image: postgres:16-alpine
         env:
-          POSTGRES_USER: test
-          POSTGRES_PASSWORD: test
-          POSTGRES_DB: testdb
+          POSTGRES_DB:       ${{ vars.DB_NAME }}
+          POSTGRES_USER:     ${{ vars.DB_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.DB_PASSWORD }}
         ports:
-          - 5432:5432
+          - ${{ vars.DB_PORT }}:5432
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+
+    env:
+      # Base de datos PostgreSQL (usadas por docker-compose.yaml)
+      DB_NAME:     ${{ vars.DB_NAME }}
+      DB_USER:     ${{ vars.DB_USER }}
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+      DB_PORT:     ${{ vars.DB_PORT }}
+
+      # Configuración para Spring Boot
+      SPRING_DATASOURCE_URL:      jdbc:postgresql://localhost:${{ vars.DB_PORT }}/${{ vars.DB_NAME }}
+      SPRING_DATASOURCE_USERNAME: ${{ vars.DB_USER }}
+      SPRING_DATASOURCE_PASSWORD: ${{ secrets.DB_PASSWORD }}
 
     steps:
       - name: Checkout
@@ -42,8 +54,3 @@ jobs:
 
       - name: Build + Test
         run: ./gradlew build --no-daemon
-        env:
-          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/testdb
-          SPRING_DATASOURCE_USERNAME: test
-          SPRING_DATASOURCE_PASSWORD: test
-          SPRING_JPA_HIBERNATE_DDL_AUTO: create-drop
